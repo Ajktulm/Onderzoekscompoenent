@@ -1,8 +1,8 @@
-T = 10;
+T = 100;
 Lowerbound = 5;
 Upperbound = 15;
 mu = 0;
-sigma = 3; %Works incredibly bad for sigma=1 (or other low values)
+sigma = 1; %Works incredibly bad for sigma=1 (or other low values)
 Costs = Lowerbound: (Upperbound-Lowerbound)/49 : Upperbound;
 M = length(Costs);
 n = 100000; %Number of simulations
