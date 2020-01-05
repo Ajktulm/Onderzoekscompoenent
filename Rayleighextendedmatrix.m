@@ -1,11 +1,12 @@
 fs = 1000;
 fd = 60;
 Mean = 10;
-n = 1000000;
+n = 100000;
+Sell = zeros(1,800);
 T = 100;
 nRuns = n/T;
 Lowerbound = 0.1;
-Upperbound = 20;
+Upperbound = 100;
 Nstates = 20;
 Increasing = true; %Indicator variable whether process is increasing or decreasing
 
@@ -153,12 +154,14 @@ for i = nRuns/5:nRuns
            if(1/Run(k) <= Thresholdincreasing(k)) 
                Algocosts(i) = 1/Run(k); 
                Sellincreasing = Sellincreasing + 1;
+               Sell(i-199) = k;
                break
            end
         else
             if(1/Run(k) <= Thresholddecreasing(k)) 
                Algocosts(i) = 1/Run(k); 
                Selldecreasing = Selldecreasing+1;
+               Sell(i-199)=k;
                break
             end
         end 
@@ -171,5 +174,8 @@ end
 mean(Algocosts(nRuns/5:nRuns))/mean(Optimalcosts(nRuns/5:nRuns))
 Deadlinefails = Deadlinefails/(nRuns/5*4)
 
-%sign(Probmatrixincreasing - Probmatrixdecreasing) check if there is a
-%clear trend.
+mean(Algocosts)
+mean(Optimalcosts)
+
+sign(Probmatrixincreasing - Probmatrixdecreasing) check if there is a
+clear trend.

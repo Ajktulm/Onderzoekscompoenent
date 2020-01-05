@@ -1,13 +1,5 @@
-fs = 1000;
-fd = 60;
-Mean = 10;
-n = 100000;
-T = 1000;
-nRuns = n/T;
-Lowerbound = 0.1;
-Upperbound = 100;
-Nstates = 50;
-
+function [swek] = Rayleighestimate(fs,fd,Mean,n,T,Lowerbound,Upperbound,Nstates)
+nRuns = round(n/T)-1;
 Process = Rayleigh_fading(fs,fd,Mean,n);
 Process = max(Process,Lowerbound);
 Process = min(Process,Upperbound);
@@ -17,7 +9,7 @@ Cheatedcosts = zeros(1,Nstates);
 Cheatedcosts(1) = Lowerbound;
 Cheatedcosts(Nstates) = Upperbound;
 for i = 2:Nstates-1
-   Cheatedcosts(i) = Cheat(i*n/Nstates); 
+   Cheatedcosts(i) = Cheat(round(i*n/Nstates)); 
 end
 
 
@@ -29,7 +21,7 @@ Transitions = 0.001*eye(Nstates);
 
 Algocosts = zeros(1,nRuns);
 Optimalcosts = zeros(1,nRuns);
-Deadlinefails = 0;
+
 for i = 1:nRuns/5 %Training algorithm, using very simple decision rule
     Run = zeros(1,T);
     for j = 1:T
@@ -55,15 +47,24 @@ for i = 1:nRuns/5 %Training algorithm, using very simple decision rule
     end 
     if(Algocosts(i) == 0) %Edgecase if deadline is not met;
         Algocosts(i) = Run(T); 
-        Deadlinefails = Deadlinefails + 1;
     end
 end
 
-mean(Algocosts(1:nRuns/5))/mean(Optimalcosts(1:nRuns/5)) 
-Deadlinefails = Deadlinefails/(nRuns/5)
+Probmatrix = Estimatematrix(Transitions);
+[Estimatedcostmatrix, Estimateddecisionmatrix] = ValueiterationMarkov(T,1./Cheatedcosts,Probmatrix);
+threshold = zeros(T,1);
+for k = 1:T %Compute a "possible threshold" (for example if policy is to sell at values 1,2,3,6,8 the threshold is estimated at 3)
+    V =  Estimateddecisionmatrix(:,k);
+    V = V';
+    t = [diff(find([1,diff(V),1]))];
+    if (length(t) == 1)
+        threshold(k) = 1/Cheatedcosts(Nstates);
+    else
+        threshold(k) = 1/Cheatedcosts(t(1));
+    end
+end
 
-Deadlinefails = 0;
-for i = nRuns/5:nRuns
+for i = round(nRuns/5)+1:nRuns
     if(mod(i,10) == 0) %Update threshold estimates
         Probmatrix = Estimatematrix(Transitions);
         [Estimatedcostmatrix, Estimateddecisionmatrix] = ValueiterationMarkov(T,1./Cheatedcosts,Probmatrix);
@@ -95,7 +96,6 @@ for i = nRuns/5:nRuns
 
         Transitions(Previousestimatedstatenumber,Estimatedstatenumber) = Transitions(Previousestimatedstatenumber,Estimatedstatenumber) + 1;
     end
-    
     Optimalcosts(i) = 1/max(Run);
     for k = 1:T-1
         if(1/Run(k) <= threshold(k)) 
@@ -106,8 +106,7 @@ for i = nRuns/5:nRuns
     end   
     if(Algocosts(i) == 0) %Edgecase if deadline is not met;
         Algocosts(i) = Run(T); 
-        Deadlinefails = Deadlinefails + 1;
     end
 end
-mean(Algocosts(nRuns/5:nRuns))/mean(Optimalcosts(nRuns/5:nRuns))
-Deadlinefails = Deadlinefails/(nRuns/5*4)
+swek = mean(Algocosts(round(nRuns/5):nRuns))/mean(Optimalcosts(round(nRuns/5):nRuns));
+end
